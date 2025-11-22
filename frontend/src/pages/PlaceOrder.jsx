@@ -46,27 +46,50 @@ const PlaceOrder = () => {
           }
         });
       });
-      console.log(formData);
-      
+
       let orderData = {
         address: formData,
         items: orderItems,
         amount: getCartAmount() + delivery_fee
       };
 
-      switch (method) {
-        case 'cod':
-          const response = await axios.post(`${backendUrl}/api/order/place`, orderData, { headers: { token } });
-          if (response.data.success) {
-            setCartItems({});
-            navigate('/orders');
-          } else {
-            toast.error(response.data.message);
-          }
-          break;
-        default:
-          break;
+     
+      if (method === 'cod') {
+        const response = await axios.post(`${backendUrl}/api/order/place`, orderData, { headers: { token } });
+        if (response.data.success) {
+          setCartItems({});
+          navigate('/orders');
+        } else {
+          toast.error(response.data.message);
+        }
+        return;
       }
+
+      if (method === 'stripe') {
+         const stripeResponse = await axios.post(`${backendUrl}/api/order/stripe`, orderData, { headers: { token } });
+
+          if (stripeResponse.data.success) {
+              window.location.href = stripeResponse.data.session_url;  
+          } else {
+              toast.error(stripeResponse.data.message);
+          }
+        return;
+      }
+
+  
+      if (method === 'razorpay') {
+        const response = await axios.post(`${backendUrl}/api/order/razorpay`, orderData, { headers: { token } });
+
+        if (response.data.success) {
+          toast.success("Razorpay demo payment successful");
+          setCartItems({});
+          navigate('/orders');
+        } else {
+          toast.error(response.data.message);
+        }
+        return;
+      }
+
     } catch (error) {
       console.error(error);
       toast.error(error.message);
@@ -104,11 +127,11 @@ const PlaceOrder = () => {
           <div className='flex gap-3 flex-col lg:flex-row'>
             <div onClick={() => setMethod('stripe')} className='flex items-center gap-3 border p-2 px-3 cursor-pointer'>
               <p className={`min-w-3.5 h-3.5 border rounded-full ${method === 'stripe' ? 'bg-green-400' : ''}`}></p>
-              <img className={`h-5 mx-4`} src={assets.stripe_logo} alt="Stripe" />
+              <img className='h-5 mx-4' src={assets.stripe_logo} alt="Stripe" />
             </div>
             <div onClick={() => setMethod('razorpay')} className='flex items-center gap-3 border p-2 px-3 cursor-pointer'>
-              <p className={`min-w-3.5 h-3.5 border rounded-full ${method === 'razorpay' ? 'bg-green-400' : ''}`} ></p>
-              <img className={`h-5 mx-4`} src={assets.razorpay_logo} alt="Razorpay" />
+              <p className={`min-w-3.5 h-3.5 border rounded-full ${method === 'razorpay' ? 'bg-green-400' : ''}`}></p>
+              <img className='h-5 mx-4' src={assets.razorpay_logo} alt="Razorpay" />
             </div>
             <div onClick={() => setMethod('cod')} className='flex items-center gap-3 border p-2 px-3 cursor-pointer'>
               <p className={`min-w-3.5 h-3.5 border rounded-full ${method === 'cod' ? 'bg-green-400' : ''}`}></p>

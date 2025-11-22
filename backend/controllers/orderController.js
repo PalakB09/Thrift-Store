@@ -27,14 +27,65 @@ const placeOrder = async (req, res) => {
 }
 
 // Placing orders using stripe method
-const placeOrderStripe = async (req, res) => {
+import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-}
+const placeOrderStripe = async (req, res) => {
+    try {
+        const { items, amount } = req.body;
+
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ["card"],
+            mode: "payment",
+            line_items: [
+                {
+                    price_data: {
+                        currency: "usd",
+                        product_data: { name: "Order Payment" },
+                        unit_amount: amount * 100,
+                    },
+                    quantity: 1,
+                }
+            ],
+            success_url: "http://localhost:5173/verify?success=true",
+            cancel_url: "http://localhost:5173/verify?success=false",
+        });
+
+        res.json({ success: true, session_url: session.url });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
 
 // Placing orders using Razorpay method
-const placeOrderRazorpay = async (req, res) => {
+import Razorpay from "razorpay";
 
-}
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+});
+
+const placeOrderRazorpay = async (req, res) => {
+    try {
+        const { amount } = req.body;
+
+        const options = {
+            amount: amount * 100,
+            currency: "INR",
+            receipt: "receipt_" + Date.now(),
+        };
+
+        const order = await razorpay.orders.create(options);
+
+        res.json({ success: true, order });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
 
 // All orders data for admin panel
 const allOrders = async (req, res) => {
