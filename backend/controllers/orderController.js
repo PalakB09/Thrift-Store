@@ -125,4 +125,38 @@ const updateStatus = async (req, res) => {
     }
 }
 
+const verifyStripe = async (req, res) => {
+    try {
+        const { userId, items, amount, address, success } = req.body;
+
+        if (!success) {
+            return res.json({ success: false, message: "Payment Failed" });
+        }
+
+        // Create order since Stripe shows success=true
+        const orderData = {
+            userId,
+            items,
+            amount,
+            address,
+            paymentMethod: "Stripe",
+            payment: true,
+            date: Date.now()
+        };
+
+        const newOrder = new orderModel(orderData);
+        await newOrder.save();
+
+        await userModel.findByIdAndUpdate(userId, { cartData: {} });
+
+        res.json({ success: true, message: "Payment Verified & Order Placed" });
+    } 
+    catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+
+
 export {placeOrder, placeOrderRazorpay, placeOrderStripe, allOrders, updateStatus, userOrders}

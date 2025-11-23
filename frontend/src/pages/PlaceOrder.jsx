@@ -69,6 +69,7 @@ const PlaceOrder = () => {
          const stripeResponse = await axios.post(`${backendUrl}/api/order/stripe`, orderData, { headers: { token } });
 
           if (stripeResponse.data.success) {
+              localStorage.setItem("address", JSON.stringify(formData));
               window.location.href = stripeResponse.data.session_url;  
           } else {
               toast.error(stripeResponse.data.message);
