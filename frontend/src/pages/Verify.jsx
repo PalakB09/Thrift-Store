@@ -1,14 +1,14 @@
-import { useEffect, useContext } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { useContext, useEffect } from "react";
 import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
-import { useSearchParams, useNavigate } from "react-router-dom";
 
 const Verify = () => {
-  const { backendUrl, token, cartItems, products, setCartItems, delivery_fee, getCartAmount } =
+  const { backendUrl, token, cartItems, products, delivery_fee, getCartAmount, setCartItems } =
     useContext(ShopContext);
 
-  const [searchParams] = useSearchParams();
-  const success = searchParams.get("success");
+  const [params] = useSearchParams();
+  const success = params.get("success");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,46 +16,61 @@ const Verify = () => {
   }, []);
 
   const verifyPayment = async () => {
-    try {
-      if (!token) return;
+  try {
+    if (!token) return;
 
-      let orderItems = [];
-      Object.keys(cartItems).forEach(itemId => {
-        Object.keys(cartItems[itemId]).forEach(size => {
-          let itemInfo = products.find(p => p._id === itemId);
-          if (itemInfo) {
-            orderItems.push({
-              ...itemInfo,
-              size,
-              quantity: cartItems[itemId][size]
-            });
-          }
-        });
+    const savedAddress = JSON.parse(localStorage.getItem("address")) || {
+      demo: "Stripe Demo Address"
+    };
+
+    let orderItems = [];
+    Object.keys(cartItems).forEach(itemId => {
+      Object.keys(cartItems[itemId]).forEach(size => {
+        const itemInfo = products.find(p => p._id === itemId);
+        if (itemInfo) {
+          orderItems.push({
+            _id: itemInfo._id,
+            name: itemInfo.name,
+            price: itemInfo.price,
+            image: itemInfo.image,
+            size,
+            quantity: cartItems[itemId][size]
+          });
+        }
       });
+    });
 
-      let orderData = {
-        success: success === "true",
-        items: orderItems,
-        amount: getCartAmount() + delivery_fee,
-        address: { demo: "Stripe Demo Address" }
-      };
+    const orderData = {
+      success: success === "true",
+      items: orderItems,
+      amount: getCartAmount() + delivery_fee,
+      address: savedAddress
+    };
 
-      const response = await axios.post(
-        backendUrl + "/api/order/verifyStripe",
-        orderData,
-        { headers: { token } }
-      );
+    const res = await axios.post(
+      backendUrl + "/api/order/verifyStripe",
+      orderData,
+      { headers: { token } }
+    );
 
-      if (response.data.success) {
-        setCartItems({});
-        navigate("/orders");
-      }
-    } catch (error) {
-      console.log(error);
+    if (res.data.success) {
+      setCartItems({});
+      localStorage.removeItem("address");
+      navigate("/orders");
+    } else {
+      navigate("/orders");
     }
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
 
-  return <h2 style={{ padding: 40 }}>Payment Completed</h2>;
+
+  return (
+    <h1 style={{ padding: "60px", textAlign: "center" }}>
+      Verifying Payment…
+    </h1>
+  );
 };
 
 export default Verify;
