@@ -15,13 +15,19 @@ connectDB();
 connectCloudinary();
 // middlewares
 app.use(express.json())
+
 app.use(cors({
   origin: [
     "https://thrift-store-dusky.vercel.app",
     "http://localhost:5173"
   ],
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "token",      // VERY IMPORTANT
+    "x-auth-token"
+  ],
   credentials: true,
 }));
 
